@@ -6,7 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Student Tracker</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#007aff">
+
 </head>
+<script>
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/static/sw.js");
+    }
+</script>
 
 <body>
 
@@ -15,6 +23,21 @@
 
     </header>
 
+    <div class="summary-card">
+        <div>
+            <label>Total Students</label>
+            <p>{{ students|length }}</p>
+        </div>
+        <div>
+            <label>Total Sessions</label>
+            <p>{{ summary.total_sessions_done }}</p>
+        </div>
+
+        <div>
+            <label>Total Received</label>
+            <p>₹{{ summary.total_amount_received }}</p>
+        </div>
+    </div>
 
     <main class="container">
         {% for s in students %}

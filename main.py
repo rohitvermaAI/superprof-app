@@ -40,17 +40,36 @@ def compute(s):
 def home(request: Request):
     students = read_students()
 
+    total_sessions_done = 0
+    total_sessions_sold = 0
+    total_amount = 0
+
     for s in students:
         remaining, total, pay_status, sess_status = compute(s)
+
         s["remaining"] = remaining
         s["total_received"] = total
         s["payment_status"] = pay_status
         s["session_status"] = sess_status
         s["sessions"] = s["sessions_done"]
 
+        total_sessions_done += s["sessions_done"]
+        total_sessions_sold += s["payment_count"] * 3
+        total_amount += total
+
+    summary = {
+        "total_sessions_done": total_sessions_done,
+        "total_sessions_sold": total_sessions_sold,
+        "total_amount_received": total_amount
+    }
+
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "students": students}
+        {
+            "request": request,
+            "students": students,
+            "summary": summary
+        }
     )
 
 
@@ -114,3 +133,16 @@ def undo(student_id: int):
 
     write_students(students)
     return {"success": True}
+@app.get("/summary")
+def get_summary():
+    students = read_students()
+
+    total_sessions_done = sum(s["sessions_done"] for s in students)
+    total_sessions_sold = sum(s["payment_count"] * 3 for s in students)
+    total_amount = sum(s["payment_count"] * 3 * s["fee"] for s in students)
+
+    return {
+        "total_sessions_done": total_sessions_done,
+        "total_sessions_sold": total_sessions_sold,
+        "total_amount_received": total_amount
+    }
