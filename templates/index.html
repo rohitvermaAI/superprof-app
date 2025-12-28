@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Tracker</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <h1>Students</h1>
+
+    </header>
+
+
+    <main class="container">
+        {% for s in students %}
+        <div class="card">
+
+            <!-- Header: Name left, badges right -->
+            <div class="card-header">
+                <div class="card-title">{{ s.name }}</div>
+                <div class="header-actions">
+                    <div class="status-row">
+                        <span class="badge {{ s.payment_status }}">
+                            {{ s.payment_status }}
+                        </span>
+                        <span class="badge {{ s.session_status }}">
+                            {{ s.session_status }}
+                        </span>
+
+                    </div>
+                    <button class="undo-icon" onclick="action('/undo/{{ s.id }}')">↩️</button>
+
+                </div>
+            </div>
+
+            <!-- Details grid -->
+            <div class="grid">
+                <div>
+                    <label>Fee / Session</label>
+                    <p>₹{{ s.fee }}</p>
+                </div>
+                <div>
+                    <label>Sessions Done</label>
+                    <p>{{ s.sessions }}</p>
+                </div>
+                <div>
+                    <label>Remaining</label>
+                    <p class="{{ 'danger' if s.remaining < 1 else 'ok' }}">
+                        {{ s.remaining }}
+                    </p>
+                </div>
+                <div>
+                    <label>Total Paid</label>
+                    <p>₹{{ s.total_received }}</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button class="pay" onclick="action('/pay/{{ s.id }}')">
+                    💰 Add Payment
+                </button>
+                <button class="session" onclick="action('/session/{{ s.id }}')">
+                    📘 Add Session
+                </button>
+
+
+            </div>
+
+        </div>
+        {% endfor %}
+        <button class="add-student" onclick="openModal()">➕ Add Student</button>
+
+    </main>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Student</h3>
+
+            <input id="name" placeholder="Student Name">
+            <input id="fee" type="number" placeholder="Fee per session">
+
+            <div class="modal-actions">
+                <button onclick="addStudent()">Add</button>
+                <button class="cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function action(url) {
+            fetch(url, { method: "POST" })
+                .then(() => location.reload());
+        }
+        function openModal() {
+            document.getElementById("modal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+
+        function addStudent() {
+            const name = document.getElementById("name").value;
+            const fee = document.getElementById("fee").value;
+
+            fetch("/student", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, fee })
+            }).then(() => location.reload());
+        }
+
+    </script>
+
+</body>
+
+</html>
