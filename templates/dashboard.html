@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<header class="header">
+  <h1>Dashboard</h1>
+  <button class="dashboard-btn" onclick="location.href='/'">
+    ← Back
+  </button>
+</header>
+
+<div class="dashboard">
+
+  <div class="dash-card">
+    <label>This Month Revenue</label>
+    <p>₹{{ dashboard.this_revenue }}</p>
+    <span class="{{ dashboard.rev_trend }}">
+      {{ dashboard.rev_diff }}%
+    </span>
+  </div>
+
+  <div class="dash-card">
+    <label>This Month Sessions</label>
+    <p>{{ dashboard.this_sessions }}</p>
+    <span class="{{ dashboard.sess_trend }}">
+      {{ dashboard.sess_diff }}%
+    </span>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -19,8 +19,12 @@
 <body>
 
     <header class="header">
-        <h1>Students</h1>
-
+        <div class="tabs">
+            <button class="tab active">Students</button>
+            <button class="tab" onclick="location.href='/dashboard-view'">
+                📊 Dashboard
+            </button>
+        </div>
     </header>
 
     <div class="summary-card">
@@ -45,7 +49,15 @@
 
             <!-- Header: Name left, badges right -->
             <div class="card-header">
-                <div class="card-title">{{ s.name }}</div>
+                <div class="name-row">
+                    <div class="card-title">{{ s.name }}</div>
+                    {% if s.phone %}
+                    <a class="wa-link" href="https://wa.me/{{ s.phone }}" target="_blank" rel="noopener"
+                        title="Message on WhatsApp">
+                        <img src="/static/icons/whatsapp.svg" alt="WhatsApp">
+                    </a>
+                    {% endif %}
+                </div>
                 <div class="header-actions">
                     <div class="status-row">
                         <span class="badge {{ s.payment_status }}">
@@ -94,7 +106,29 @@
 
 
             </div>
+            {% if s.session_logs or s.payment_logs %}
+            <details class="logs">
+                <summary class="logs-toggle">
+                    📄 View Logs
+                </summary>
 
+                <div class="logs-content">
+                    <strong>Sessions</strong>
+                    <ul>
+                        {% for d in s.session_logs %}
+                        <li>{{ d }}</li>
+                        {% endfor %}
+                    </ul>
+
+                    <strong>Payments</strong>
+                    <ul>
+                        {% for d in s.payment_logs %}
+                        <li>{{ d }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </details>
+            {% endif %}
         </div>
         {% endfor %}
         <button class="add-student" onclick="openModal()">➕ Add Student</button>
@@ -106,6 +140,7 @@
 
             <input id="name" placeholder="Student Name">
             <input id="fee" type="number" placeholder="Fee per session">
+            <input id="phone" type="tel" placeholder="WhatsApp Number">
 
             <div class="modal-actions">
                 <button onclick="addStudent()">Add</button>
@@ -131,11 +166,11 @@
         function addStudent() {
             const name = document.getElementById("name").value;
             const fee = document.getElementById("fee").value;
-
+            const phone = document.getElementById("phone").value;
             fetch("/student", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, fee })
+                body: JSON.stringify({ name, fee, phone })
             }).then(() => location.reload());
         }
 

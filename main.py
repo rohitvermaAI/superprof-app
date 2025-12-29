@@ -1,10 +1,12 @@
 from fastapi import FastAPI, Request, Body
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from datetime import date
+from datetime import date, datetime
 from fastapi.staticfiles import StaticFiles
-
+from datetime import date
 from blob_service import read_students, write_students
+from collections import defaultdict
+from datetime import datetime, timedelta
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -35,6 +37,62 @@ def compute(s):
 
     return remaining, total_received, payment_status, session_status
 
+def compute_dashboard(students):
+    revenue = defaultdict(int)
+    sessions = defaultdict(int)
+
+    for s in students:
+        fee = s["fee"]
+
+        for d in s.get("payment_logs", []):
+            revenue[month_key(d)] += fee * 3
+
+        for d in s.get("session_logs", []):
+            sessions[month_key(d)] += 1
+
+    return revenue, sessions
+def build_dashboard(students):
+    revenue_by_month = defaultdict(int)
+    sessions_by_month = defaultdict(int)
+
+    # Aggregate logs
+    for s in students:
+        fee = s["fee"]
+
+        for d in s.get("payment_logs", []):
+            revenue_by_month[month_key(d)] += fee * 3
+
+        for d in s.get("session_logs", []):
+            sessions_by_month[month_key(d)] += 1
+
+    # Current & previous month
+    today = datetime.today()
+    this_month = today.strftime("%Y-%m")
+
+    first_day_this_month = today.replace(day=1)
+    last_month_date = first_day_this_month - timedelta(days=1)
+    last_month = last_month_date.strftime("%Y-%m")
+
+    this_revenue = revenue_by_month.get(this_month, 0)
+    last_revenue = revenue_by_month.get(last_month, 0)
+
+    this_sessions = sessions_by_month.get(this_month, 0)
+    last_sessions = sessions_by_month.get(last_month, 0)
+
+    # Percentage change helper
+    def percent_change(current, previous):
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round(((current - previous) / previous) * 100, 1)
+
+    return {
+        "this_revenue": this_revenue,
+        "this_sessions": this_sessions,
+        "rev_diff": percent_change(this_revenue, last_revenue),
+        "sess_diff": percent_change(this_sessions, last_sessions),
+        "rev_trend": "ok" if this_revenue >= last_revenue else "danger",
+        "sess_trend": "ok" if this_sessions >= last_sessions else "danger"
+    }
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
@@ -80,14 +138,19 @@ def add_payment(student_id: int):
     for s in students:
         if s["id"] == student_id:
             s["payment_count"] += 1
-            s["date_received"] = str(date.today())
+
+            if "payment_logs" not in s:
+                s["payment_logs"] = []
+
+            s["payment_logs"].append(str(date.today()))
+            s["last_action"] = "payment"
             break
-    
-    s["last_action"] = "payment"
+
     write_students(students)
     return {"success": True}
 
-
+def month_key(date_str):
+    return datetime.fromisoformat(date_str).strftime("%Y-%m")
 @app.post("/session/{student_id}")
 def add_session(student_id: int):
     students = read_students()
@@ -95,9 +158,14 @@ def add_session(student_id: int):
     for s in students:
         if s["id"] == student_id:
             s["sessions_done"] += 1
+
+            if "session_logs" not in s:
+                s["session_logs"] = []
+
+            s["session_logs"].append(str(date.today()))
+            s["last_action"] = "session"
             break
-    
-    s["last_action"] = "session"
+
     write_students(students)
     return {"success": True}
 @app.post("/student")
@@ -109,6 +177,7 @@ def add_student(data: dict = Body(...)):
     students.append({
         "id": new_id,
         "name": data["name"],
+        "phone": data["phone"],
         "fee": int(data["fee"]),
         "sessions_done": 0,
         "payment_count": 0,
@@ -146,3 +215,25 @@ def get_summary():
         "total_sessions_sold": total_sessions_sold,
         "total_amount_received": total_amount
     }
+@app.get("/dashboard")
+def dashboard():
+    students = read_students()
+    revenue, sessions = compute_dashboard(students)
+
+    return {
+        "revenue": revenue,
+        "sessions": sessions
+    }
+@app.get("/dashboard-view", response_class=HTMLResponse)
+def dashboard_view(request: Request):
+    students = read_students()
+
+    dashboard = build_dashboard(students)
+
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "dashboard": dashboard
+        }
+    )
