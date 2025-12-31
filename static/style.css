@@ -357,3 +357,14 @@ button:active {
   font-size: 13px;
   color: var(--muted);
 }
+.search-box {
+  padding: 0 14px 10px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e5ea;
+  font-size: 15px;
+}

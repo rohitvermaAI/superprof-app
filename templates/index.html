@@ -27,6 +27,7 @@
         </div>
     </header>
 
+
     <div class="summary-card">
         <div>
             <label>Total Students</label>
@@ -42,10 +43,13 @@
             <p>₹{{ summary.total_amount_received }}</p>
         </div>
     </div>
-
+    <div class="search-box">
+        <input type="text" id="studentSearch" placeholder="Search student…" onkeyup="searchStudents()" />
+    </div>
     <main class="container">
         {% for s in students %}
-        <div class="card">
+        <div class="card student-card" data-name="{{ s.name | lower }}" data-phone="{{ s.phone }}">
+
 
             <!-- Header: Name left, badges right -->
             <div class="card-header">
@@ -172,6 +176,21 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, fee, phone })
             }).then(() => location.reload());
+        }
+        function searchStudents() {
+            const query = document.getElementById("studentSearch").value.toLowerCase();
+            const cards = document.querySelectorAll(".student-card");
+
+            cards.forEach(card => {
+                const name = card.dataset.name || "";
+                const phone = card.dataset.phone || "";
+
+                if (name.includes(query) || phone.includes(query)) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            });
         }
 
     </script>
