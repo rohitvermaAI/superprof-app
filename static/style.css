@@ -368,3 +368,13 @@ button:active {
   border: 1px solid #e5e5ea;
   font-size: 15px;
 }
+.superprof-btn {
+    display: inline-block;   /* REQUIRED */
+    border-radius: 10px;
+    overflow: hidden;        /* REQUIRED */
+}
+
+.superprof-btn img {
+    width: 40px;      /* change as needed */
+    height: auto;     /* keeps aspect ratio */
+}
