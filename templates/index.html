@@ -29,7 +29,7 @@
         <a class="superprof-btn" href="https://www.superprof.in/" target="_blank" rel="noopener">
             <img src="/static/icons/sup.png" alt="" srcset="">
         </a>
-        
+
     </header>
 
 
@@ -52,10 +52,20 @@
     <div class="search-box">
         <input type="text" id="studentSearch" placeholder="Search student…" onkeyup="searchStudents()" />
     </div>
+    <div class="filters">
+        <input type="text" id="studentSearch" placeholder="Search student…" onkeyup="searchStudents()" />
+
+        <select id="statusFilter" onchange="filterStudents()">
+            <option value="all">All Students</option>
+            <option value="pending">Payment Pending</option>
+            <option value="completed">Sessions Completed</option>
+            <option value="active">Active</option>
+        </select>
+    </div>
     <main class="container">
         {% for s in students %}
-        <div class="card student-card" data-name="{{ s.name | lower }}" data-phone="{{ s.phone }}">
-
+        <div class="card student-card" data-name="{{ s.name | lower }}" data-phone="{{ s.phone }}"
+            data-status="{{ s.session_status | lower }}">
 
             <!-- Header: Name left, badges right -->
             <div class="card-header">
@@ -107,7 +117,7 @@
 
             <!-- Actions -->
             <div class="actions">
-                <button class="pay" onclick="action('/pay/{{ s.id }}')">
+                <button class="pay" onclick="addPayment('{{ s.id }}')">
                     💰 Add Payment
                 </button>
                 <button class="session" onclick="action('/session/{{ s.id }}')">
@@ -172,7 +182,19 @@
         function closeModal() {
             document.getElementById("modal").style.display = "none";
         }
+        function addPayment(studentId) {
 
+            const sessions = prompt("How many sessions paid for?");
+
+            if (!sessions || isNaN(sessions)) return;
+
+            fetch(`/pay/${studentId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sessions })
+            })
+                .then(() => location.reload());
+        }
         function addStudent() {
             const name = document.getElementById("name").value;
             const fee = document.getElementById("fee").value;
@@ -198,7 +220,20 @@
                 }
             });
         }
+        function filterStudents() {
+            const filter = document.getElementById("statusFilter").value;
+            const cards = document.querySelectorAll(".student-card");
 
+            cards.forEach(card => {
+                const status = card.dataset.status;
+
+                if (filter === "all" || status === filter) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
     </script>
 
 </body>

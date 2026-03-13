@@ -14,8 +14,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 def compute(s):
-    total_sessions = s["payment_count"] * 3
-    remaining = total_sessions - s["sessions_done"]
+    total_sessions = s.get("sessions_paid", 0)
+    remaining = s.get("sessions_paid", 0) - s["sessions_done"]
     total_received = total_sessions * s["fee"]
 
     # Payment status
@@ -60,7 +60,7 @@ def build_dashboard(students):
         fee = s["fee"]
 
         for d in s.get("payment_logs", []):
-            revenue_by_month[month_key(d)] += fee * 3
+            revenue_by_month[month_key(d)] += fee * s.get("last_payment_sessions", 0)
 
         for d in s.get("session_logs", []):
             sessions_by_month[month_key(d)] += 1
@@ -132,21 +132,29 @@ def home(request: Request):
 
 
 @app.post("/pay/{student_id}")
-def add_payment(student_id: int):
+def add_payment(student_id: int, data: dict = Body(...)):
     students = read_students()
+
+    sessions_paid = int(data["sessions"])
 
     for s in students:
         if s["id"] == student_id:
-            s["payment_count"] += 1
+
+            s["sessions_paid"] = s.get("sessions_paid", 0) + sessions_paid
 
             if "payment_logs" not in s:
                 s["payment_logs"] = []
 
-            s["payment_logs"].append(str(date.today()))
+            s["payment_logs"].append({
+                "date": str(date.today()),
+                "sessions": sessions_paid
+            })
+
             s["last_action"] = "payment"
             break
 
     write_students(students)
+
     return {"success": True}
 
 def month_key(date_str):
@@ -180,6 +188,7 @@ def add_student(data: dict = Body(...)):
         "phone": data["phone"],
         "fee": int(data["fee"]),
         "sessions_done": 0,
+        "sessions_paid": 0,
         "payment_count": 0,
         "date_received": None
     })
